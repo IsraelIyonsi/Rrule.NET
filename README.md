@@ -61,6 +61,7 @@ The start date is the `DTSTART`. Its time of day is carried onto every occurrenc
 | `BYDAY` | Yes, plain (`MO`) and ordinal (`1MO`, `-1FR`) |
 | `BYSETPOS` | Yes, including negatives |
 | `BYYEARDAY` | Yes, including negatives |
+| `BYWEEKNO` | Yes, for `FREQ=YEARLY` with the ISO default `WKST=MO`. Selects ISO 8601 week numbers (`1` to `53`, or `-1` to `-53` from the year end). With `BYDAY` it picks the given weekdays in each selected week; without `BYDAY` it uses the `DTSTART` weekday. |
 | `WKST` | Yes (default `MO`; affects `WEEKLY` period boundaries) |
 
 ### Deferred (conscious limitations, not silent gaps)
@@ -68,7 +69,7 @@ The start date is the `DTSTART`. Its time of day is carried onto every occurrenc
 | Part | Status |
 | --- | --- |
 | `FREQ=HOURLY` / `MINUTELY` / `SECONDLY` | Parsed, but expansion throws `NotSupportedException`. This library is date-grained. |
-| `BYWEEKNO` | Parsed, but expansion throws `NotSupportedException`. ISO week-number expansion is not yet implemented. |
+| `BYWEEKNO` with `WKST` other than `MO` | Parsed, but expansion throws `NotSupportedException`. ISO 8601 weeks are Monday-based; a shifted week start is not yet implemented. `BYWEEKNO` with a non-`YEARLY` `FREQ` likewise throws (RFC 5545 restricts it to `YEARLY`). |
 | `BYHOUR` / `BYMINUTE` / `BYSECOND` | Not recognized (time-of-day comes from `DTSTART`); rejected at parse time. |
 
 If a rule uses a deferred feature you get a clear, typed failure rather than a wrong answer.
@@ -98,6 +99,10 @@ Correctness is the whole product, so the test suite asserts exact occurrence dat
 - `FREQ=MONTHLY;BYMONTHDAY=31;COUNT=5` (skips months without a 31st)
 - `FREQ=YEARLY;COUNT=3` from 29 February (leap years only)
 - `FREQ=MONTHLY;INTERVAL=2;BYDAY=1MO;COUNT=4` (every other month, first Monday)
+- `FREQ=YEARLY;BYWEEKNO=20;BYDAY=MO` (Monday of ISO week 20 each year)
+- `FREQ=YEARLY;BYWEEKNO=20` (ISO week 20, using the `DTSTART` weekday)
+- `FREQ=YEARLY;BYWEEKNO=1;BYDAY=MO` (Monday of the first ISO week)
+- `FREQ=YEARLY;BYWEEKNO=-1;BYDAY=MO` (Monday of the last ISO week, 52 or 53)
 
 plus behavioural tests for `UNTIL` bounding, lazy `Take` on unbounded rules, time-of-day propagation, the runaway guard, and deferred-feature and malformed-rule failures.
 

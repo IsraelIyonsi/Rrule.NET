@@ -67,7 +67,11 @@ public sealed class RecurrenceRule
     /// <summary>The days of the year (1 to 366, or -1 to -366 from the end) (<c>BYYEARDAY</c>).</summary>
     public IReadOnlyList<int> ByYearDay { get; }
 
-    /// <summary>The ISO week numbers (<c>BYWEEKNO</c>). Parsed but deferred; expansion throws if present.</summary>
+    /// <summary>
+    /// The ISO 8601 week numbers (1 to 53, or -1 to -53 counting from the year end)
+    /// (<c>BYWEEKNO</c>). Supported for <c>FREQ=YEARLY</c> with the ISO default
+    /// <c>WKST=MO</c>.
+    /// </summary>
     public IReadOnlyList<int> ByWeekNo { get; }
 
     /// <summary>The 1-based positions selected from each period's candidate set (<c>BYSETPOS</c>), negatives count from the end.</summary>

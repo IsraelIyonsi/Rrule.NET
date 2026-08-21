@@ -2,11 +2,12 @@ namespace Rrule.Internal;
 
 /// <summary>
 /// Expands a <c>FREQ=YEARLY</c> rule. Each period is one year. The RFC 5545 "Note 2"
-/// interactions are resolved by precedence: <c>BYYEARDAY</c> expands then the other parts
-/// limit; otherwise <c>BYMONTH</c> drives per-month expansion; otherwise a lone
-/// <c>BYMONTHDAY</c> repeats across every month; otherwise a lone <c>BYDAY</c> expands
-/// across the whole year (ordinals count within the year); otherwise the start month and
-/// day recur.
+/// interactions are resolved by precedence: <c>BYWEEKNO</c> selects ISO 8601 weeks (then
+/// <c>BYDAY</c> picks weekdays within them, or the start weekday is used); otherwise
+/// <c>BYYEARDAY</c> expands then the other parts limit; otherwise <c>BYMONTH</c> drives
+/// per-month expansion; otherwise a lone <c>BYMONTHDAY</c> repeats across every month;
+/// otherwise a lone <c>BYDAY</c> expands across the whole year (ordinals count within the
+/// year); otherwise the start month and day recur.
 /// </summary>
 internal sealed class YearlyExpander : IPeriodExpander
 {
@@ -18,6 +19,11 @@ internal sealed class YearlyExpander : IPeriodExpander
     public IEnumerable<DateTime> Candidates(RecurrenceRule rule, DateTime anchor, DateTime start)
     {
         var year = anchor.Year;
+
+        if (rule.ByWeekNo.Count > 0)
+        {
+            return FromWeekNumbers(year, rule, start);
+        }
 
         if (rule.ByYearDay.Count > 0)
         {
@@ -40,6 +46,44 @@ internal sealed class YearlyExpander : IPeriodExpander
         }
 
         return FromStartMonthDay(year, start);
+    }
+
+    private static IEnumerable<DateTime> FromWeekNumbers(int year, RecurrenceRule rule, DateTime start)
+    {
+        var weekdays = WeekdaysForWeek(rule, start);
+        foreach (var weekNo in rule.ByWeekNo)
+        {
+            var week = DateHelpers.ResolveWeekNo(year, weekNo);
+            if (week is null)
+            {
+                continue;
+            }
+
+            foreach (var weekday in weekdays)
+            {
+                var date = DateHelpers.IsoWeekDate(year, week.Value, weekday);
+                if (date is not null && LimitFilters.PassesByMonth(date.Value, rule.ByMonth))
+                {
+                    yield return date.Value;
+                }
+            }
+        }
+    }
+
+    private static IReadOnlyList<DayOfWeek> WeekdaysForWeek(RecurrenceRule rule, DateTime start)
+    {
+        if (rule.ByDay.Count == 0)
+        {
+            return new[] { start.DayOfWeek };
+        }
+
+        var days = new List<DayOfWeek>(rule.ByDay.Count);
+        foreach (var entry in rule.ByDay)
+        {
+            days.Add(entry.Day);
+        }
+
+        return days;
     }
 
     private static IEnumerable<DateTime> FromYearDays(int year, RecurrenceRule rule)

@@ -78,6 +78,15 @@ public class ParserTests
     }
 
     [Theory]
+    [InlineData("FREQ=YEARLY;BYWEEKNO=20;BYDAY=1MO")]
+    [InlineData("FREQ=YEARLY;BYWEEKNO=20;BYDAY=MO,-1FR")]
+    public void Rejects_ordinal_byday_combined_with_byweekno(string rrule)
+    {
+        // RFC 5545 3.3.10: an ordinal BYDAY cannot combine with BYWEEKNO under FREQ=YEARLY.
+        Assert.Throws<RruleParseException>(() => RecurrenceRule.Parse(rrule));
+    }
+
+    [Theory]
     [InlineData("FREQ=MONTHLY;BYSETPOS=-1")]
     [InlineData("FREQ=DAILY;BYSETPOS=1")]
     public void Rejects_bysetpos_without_another_by_part(string rrule)

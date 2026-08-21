@@ -109,7 +109,7 @@ internal static class RruleParser
             throw new RruleParseException("COUNT and UNTIL must not both be present.");
         }
 
-        ValidateByDayOrdinals(frequency.Value, byDay);
+        ValidateByDayOrdinals(frequency.Value, byDay, byWeekNo);
         ValidateBySetPos(bySetPos, byMonth, byMonthDay, byDay, byYearDay, byWeekNo);
 
         return new RecurrenceRule(
@@ -117,20 +117,33 @@ internal static class RruleParser
             byMonth, byMonthDay, byDay, byYearDay, byWeekNo, bySetPos, weekStart);
     }
 
-    private static void ValidateByDayOrdinals(Frequency frequency, IReadOnlyList<WeekdayNum> byDay)
+    private static void ValidateByDayOrdinals(
+        Frequency frequency,
+        IReadOnlyList<WeekdayNum> byDay,
+        IReadOnlyList<int> byWeekNo)
     {
-        if (frequency is not (Frequency.Daily or Frequency.Weekly))
+        var hasOrdinal = byDay.Any(entry => entry.Ordinal is not null);
+        if (!hasOrdinal)
         {
             return;
         }
 
-        if (byDay.Any(entry => entry.Ordinal is not null))
+        // RFC 5545 3.3.10: an ordinal BYDAY value only makes sense for MONTHLY or YEARLY.
+        if (frequency is Frequency.Daily or Frequency.Weekly)
         {
             throw new RruleParseException(
                 string.Format(
                     CultureInfo.InvariantCulture,
                     "An ordinal BYDAY value is only valid with MONTHLY or YEARLY, not {0}.",
                     frequency));
+        }
+
+        // RFC 5545 3.3.10: BYDAY MUST NOT carry an ordinal when FREQ=YEARLY and BYWEEKNO is present;
+        // the week is already selected by BYWEEKNO, so an ordinal weekday within the year is undefined.
+        if (frequency is Frequency.Yearly && byWeekNo.Count > 0)
+        {
+            throw new RruleParseException(
+                "An ordinal BYDAY value cannot be combined with BYWEEKNO.");
         }
     }
 

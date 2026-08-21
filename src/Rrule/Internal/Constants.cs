@@ -15,6 +15,7 @@ internal static class Constants
     public const int MaxMonth = 12;
     public const int MaxMonthDay = 31;
     public const int MaxYearDay = 366;
+    public const int MinWeekNo = 1;
     public const int MaxWeekNo = 53;
     public const int MaxSetPos = 366;
 

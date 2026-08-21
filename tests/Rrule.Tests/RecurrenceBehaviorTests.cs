@@ -135,9 +135,16 @@ public class RecurrenceBehaviorTests
     }
 
     [Fact]
-    public void ByWeekNo_is_deferred()
+    public void ByWeekNo_with_non_monday_week_start_is_deferred()
     {
         Assert.Throws<NotSupportedException>(
-            () => Recurrence.Expand("FREQ=YEARLY;BYWEEKNO=20;BYDAY=MO", Tuesday).ToArray());
+            () => Recurrence.Expand("FREQ=YEARLY;BYWEEKNO=20;BYDAY=MO;WKST=SU", Tuesday).ToArray());
+    }
+
+    [Fact]
+    public void ByWeekNo_with_non_yearly_frequency_is_deferred()
+    {
+        Assert.Throws<NotSupportedException>(
+            () => Recurrence.Expand("FREQ=WEEKLY;BYWEEKNO=20", Tuesday).ToArray());
     }
 }

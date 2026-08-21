@@ -1,13 +1,44 @@
+using System.Globalization;
+
 namespace Rrule.Internal;
 
 /// <summary>
 /// Pure calendar arithmetic shared by the period expanders: resolving month days and
 /// year days (including negative "from the end" values), enumerating weekday
-/// occurrences, and aligning to the start of a week.
+/// occurrences, aligning to the start of a week, and resolving ISO 8601 week numbers.
 /// </summary>
 internal static class DateHelpers
 {
     public static int DaysInYear(int year) => DateTime.IsLeapYear(year) ? 366 : 365;
+
+    /// <summary>
+    /// Resolves a <c>BYWEEKNO</c> value to a concrete ISO 8601 week number for the given
+    /// ISO week-numbering year, mapping negatives from the end (-1 is the last ISO week,
+    /// 52 or 53). Returns <see langword="null"/> when the week does not exist in that year
+    /// (for example week 53 in a year that has only 52).
+    /// </summary>
+    public static int? ResolveWeekNo(int isoYear, int weekNo)
+    {
+        var weeksInYear = ISOWeek.GetWeeksInYear(isoYear);
+        var week = weekNo > 0 ? weekNo : weeksInYear + weekNo + 1;
+        return week >= Constants.MinWeekNo && week <= weeksInYear ? week : null;
+    }
+
+    /// <summary>
+    /// The date of the given weekday within the given ISO 8601 week of the given ISO
+    /// week-numbering year. The returned date may fall in an adjacent calendar year, as
+    /// ISO weeks straddle year boundaries. Returns <see langword="null"/> when the week
+    /// number does not exist in that year.
+    /// </summary>
+    public static DateTime? IsoWeekDate(int isoYear, int week, DayOfWeek day)
+    {
+        if (week < Constants.MinWeekNo || week > ISOWeek.GetWeeksInYear(isoYear))
+        {
+            return null;
+        }
+
+        return ISOWeek.ToDateTime(isoYear, week, day);
+    }
 
     /// <summary>
     /// Resolves a <c>BYMONTHDAY</c> value to an actual day number for the given month,

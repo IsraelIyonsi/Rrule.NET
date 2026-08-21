@@ -18,7 +18,8 @@ public static class Recurrence
     /// </param>
     /// <returns>A lazy, ascending sequence of occurrences.</returns>
     /// <exception cref="NotSupportedException">
-    /// The rule uses a deferred feature (a sub-daily <c>FREQ</c>, or <c>BYWEEKNO</c>).
+    /// The rule uses a deferred feature: a sub-daily <c>FREQ</c>, or a <c>BYWEEKNO</c>
+    /// combined with a non-<c>YEARLY</c> frequency or a non-Monday <c>WKST</c>.
     /// </exception>
     public static IEnumerable<DateTime> Expand(RecurrenceRule rule, DateTime start)
     {
@@ -117,9 +118,24 @@ public static class Recurrence
                     rule.Frequency));
         }
 
-        if (rule.ByWeekNo.Count > 0)
+        if (rule.ByWeekNo.Count == 0)
         {
-            throw new NotSupportedException("BYWEEKNO is parsed but not yet supported by expansion.");
+            return;
+        }
+
+        if (rule.Frequency is not Frequency.Yearly)
+        {
+            throw new NotSupportedException(
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "BYWEEKNO is supported only with FREQ=YEARLY, not {0}.",
+                    rule.Frequency));
+        }
+
+        if (rule.WeekStart is not DayOfWeek.Monday)
+        {
+            throw new NotSupportedException(
+                "BYWEEKNO currently supports the ISO 8601 default WKST=MO only.");
         }
     }
 

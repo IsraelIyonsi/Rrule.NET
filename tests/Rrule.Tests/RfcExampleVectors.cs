@@ -131,6 +131,48 @@ public class RfcExampleVectors
                 "1997-09-01", "1997-11-03", "1998-01-05", "1998-03-02",
             }
         },
+
+        // The Monday of ISO week 20 each year (RFC 5545 section 3.8.5.3 "the 20th Monday").
+        // DTSTART 1997-05-12 is itself the Monday of ISO week 20 of 1997.
+        {
+            "1997-05-12", "FREQ=YEARLY;BYWEEKNO=20;BYDAY=MO;COUNT=4",
+            "yearly iso week 20 monday",
+            new[]
+            {
+                "1997-05-12", "1998-05-11", "1999-05-17", "2000-05-15",
+            }
+        },
+
+        // BYWEEKNO without BYDAY uses the DTSTART weekday (Monday) within each selected week.
+        {
+            "1997-05-12", "FREQ=YEARLY;BYWEEKNO=20;COUNT=3",
+            "yearly iso week 20 (start weekday)",
+            new[]
+            {
+                "1997-05-12", "1998-05-11", "1999-05-17",
+            }
+        },
+
+        // The Monday of the first ISO week each year. DTSTART 1999-01-04 is that Monday for 1999.
+        {
+            "1999-01-04", "FREQ=YEARLY;BYWEEKNO=1;BYDAY=MO;COUNT=3",
+            "yearly first iso week monday",
+            new[]
+            {
+                "1999-01-04", "2000-01-03", "2001-01-01",
+            }
+        },
+
+        // Negative BYWEEKNO: the Monday of the last ISO week each year (52 or 53 weeks).
+        // 1998 is a 53-week ISO year, so -1 lands on 1998-12-28.
+        {
+            "1997-12-22", "FREQ=YEARLY;BYWEEKNO=-1;BYDAY=MO;COUNT=3",
+            "yearly last iso week monday (negative)",
+            new[]
+            {
+                "1997-12-22", "1998-12-28", "1999-12-27",
+            }
+        },
     };
 
     [Theory]
